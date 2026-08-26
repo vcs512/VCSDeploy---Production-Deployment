@@ -1,0 +1,25 @@
+[project]
+name = "vcsdeploy-production-deployment"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "accelerate>=1.14.0",
+    "bentoml>=1.4.39",
+    "datasets>=5.0.1",
+    "fastapi>=0.141.1",
+    "matplotlib>=3.11.1",
+    "numpy<2",
+    "onnx==1.15.0",
+    "onnxruntime-gpu==1.17.1",
+    "openvino==2024.0.0",
+    "optimum>=2.3.0",
+    "pandas>=2.3.3",
+    "pydantic>=2.13.4",
+    "scikit-learn>=1.9.0",
+    "tensorrt==10.0.1",
+    "torch==2.1.2",
+    "torchvision>=0.16.2",
+    "transformers==4.38.0",
+]
