@@ -1,0 +1,23 @@
+services:
+  base:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    working_dir: /app
+    stdin_open: true
+    tty: true
