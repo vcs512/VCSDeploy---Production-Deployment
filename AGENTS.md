@@ -11,6 +11,7 @@ Deployment techniques for computer vision.
 - Concise comments (never inline)
 - Google style docstrings (always state args and returns when not 'None')
 - Ruff linter
+- Never use functions inside functions (or classes inside classes)
 - Explicit arguments names in functions (avoid positionals)
 - Layered architecture (folders: `services/`, `core/`, `schemas/`)
 - DTO for more than one object returned in a method (pydantic)

@@ -1,0 +1,19 @@
+{
+  "model_local_path": "checkpoints/swinv2-tiny-patch4-window16-256",
+  "dataset_name": "AI-Lab-Makerere/beans",
+  "dataset_cache_dir": "data",
+  "label_column": "labels",
+  "image_size": 224,
+  "batch_size": 8,
+  "num_epochs": 5,
+  "learning_rate": 2e-4,
+  "freeze_backbone": true,
+  "gradient_accumulation_steps": 2,
+  "mixed_precision": true,
+  "mlflow_tracking_uri": "sqlite:///mlflow.db",
+  "mlflow_experiment_name": "swinv2-beans-clf",
+  "experiments_dir": "experiments",
+  "output_model_subdir": "best",
+  "seed": 42,
+  "num_workers": 0
+}

@@ -10,6 +10,8 @@ services:
       - ./data:/app/data
       - ./configs:/app/configs
       - ./src:/app/src
+      - ./experiments:/app/experiments
+      - ./mlflow.db:/app/mlflow.db
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -23,6 +25,7 @@ services:
     working_dir: /app
     stdin_open: true
     tty: true
+    command: uv run -m src.services.training --config configs/training.json
 
   export:
     build:
