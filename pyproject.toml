@@ -1,25 +1,62 @@
 [project]
 name = "vcsdeploy-production-deployment"
 version = "0.1.0"
-description = "Add your description here"
+description = "Deployment techniques for computer vision."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "accelerate>=1.14.0",
-    "bentoml>=1.4.39",
-    "datasets>=5.0.1",
-    "fastapi>=0.141.1",
-    "matplotlib>=3.11.1",
-    "numpy<2",
-    "onnx==1.15.0",
-    "onnxruntime-gpu==1.17.1",
-    "openvino==2024.0.0",
-    "optimum>=2.3.0",
-    "pandas>=2.3.3",
+    "numpy>=1.26",
     "pydantic>=2.13.4",
+    "pandas>=2.3.3",
     "scikit-learn>=1.9.0",
-    "tensorrt==10.0.1",
-    "torch==2.1.2",
-    "torchvision>=0.16.2",
-    "transformers==4.38.0",
+    "matplotlib>=3.11.1",
+    "fastapi>=0.141.1",
+    "bentoml>=1.4.39",
 ]
+
+[dependency-groups]
+training = [
+    "torch>=2.13.0",
+    "torchvision>=0.23.0",
+    "transformers>=5.0.0",
+    "accelerate>=1.14.0",
+    "datasets>=5.0.1",
+    "mlflow>=2.20.0",
+]
+export = [
+    "torch>=2.13.0",
+    "torchvision>=0.23.0",
+    "onnx>=1.17.0",
+    "onnxruntime-gpu>=1.27.0",
+    "tensorrt-cu13>=10.0.0",
+    "openvino>=2025.0.0",
+    "optimum>=2.3.0",
+]
+inference-onnx = [
+    "torch>=2.13.0",
+    "torchvision>=0.23.0",
+    "nvidia-cudnn-cu13>=9.0.0",
+    "onnx>=1.17.0",
+    "onnxruntime-gpu>=1.27.0",
+]
+inference-tensorrt = [
+    "torch>=2.13.0",
+    "torchvision>=0.23.0",
+    "nvidia-cudnn-cu13>=9.0.0",
+    "tensorrt-cu13>=10.0.0",
+]
+inference-openvino = [
+    "torch>=2.13.0",
+    "torchvision>=0.23.0",
+    "onnx>=1.17.0",
+    "openvino>=2025.0.0",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu132" }]
+torchvision = [{ index = "pytorch-cu132" }]

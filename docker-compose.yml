@@ -1,8 +1,10 @@
 services:
-  base:
+  training:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: training
+    image: vcsdeploy-training
     volumes:
       - ./checkpoints:/app/checkpoints
       - ./data:/app/data
@@ -18,6 +20,96 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    working_dir: /app
+    stdin_open: true
+    tty: true
+
+  export:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: export
+    image: vcsdeploy-export
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    working_dir: /app
+    stdin_open: true
+    tty: true
+
+  inference-onnx:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: inference-onnx
+    image: vcsdeploy-inference-onnx
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    working_dir: /app
+    stdin_open: true
+    tty: true
+
+  inference-tensorrt:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: inference-tensorrt
+    image: vcsdeploy-inference-tensorrt
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    working_dir: /app
+    stdin_open: true
+    tty: true
+
+  inference-openvino:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: inference-openvino
+    image: vcsdeploy-inference-openvino
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
     working_dir: /app
     stdin_open: true
     tty: true
