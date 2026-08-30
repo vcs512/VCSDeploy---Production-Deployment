@@ -4,5 +4,6 @@ __pycache__
 *.pyc
 data
 checkpoints
+experiments
 docker
 mlflow.db

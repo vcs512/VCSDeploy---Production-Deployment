@@ -1,0 +1,14 @@
+{
+  "model_path": "experiments/best",
+  "output_subdir": "export",
+  "image_size": null,
+  "batch_size": 1,
+  "num_channels": 3,
+  "targets": ["onnx", "tensorrt", "openvino"],
+  "onnx_opset": 17,
+  "tensorrt_precision": "fp16",
+  "tensorrt_workspace_mb": 2048,
+  "openvino_precision": "fp16",
+  "run_validation": true,
+  "seed": 42
+}

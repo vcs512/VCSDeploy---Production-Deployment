@@ -48,26 +48,49 @@ All services are defined in `docker-compose.yml`.
 - Libraries: torch, torchvision, transformers, accelerate, datasets, mlflow.
 
 ### export
-- Inputs: PyTorch checkpoint in `checkpoints/`, export config in `configs/`.
-- Usage: `docker compose run --rm export python src/export/export.py`
-- Outputs: ONNX model, TensorRT engine, and OpenVINO IR under `checkpoints/`.
+- Inputs: trained model and export config in `configs/export.json`. Expected
+  fields:
+
+  | Field | Type | Default | Description |
+  | --- | --- | --- | --- |
+  | `model_path` | str | `experiments/best` | Directory of the trained Transformers model. |
+  | `output_subdir` | str | `export` | Subdirectory under `model_path` for converted artifacts. |
+  | `image_size` | int or null | `null` | Square input resolution; when `null` read from the model config. |
+  | `batch_size` | int | `1` | Fixed batch dimension used by the TensorRT engine. |
+  | `num_channels` | int | `3` | Number of input image channels. |
+  | `targets` | list[str] | `["onnx", "tensorrt", "openvino"]` | Backends to convert to. |
+  | `onnx_opset` | int | `17` | ONNX operator-set version used during export. |
+  | `tensorrt_precision` | str | `fp16` | TensorRT engine precision (`fp16` or `fp32`). |
+  | `tensorrt_workspace_mb` | int | `2048` | TensorRT builder workspace memory in MiB. |
+  | `openvino_precision` | str | `fp16` | OpenVINO IR precision (`fp16` or `fp32`). |
+  | `run_validation` | bool | `True` | Compare converted outputs against the PyTorch model. |
+  | `seed` | int | `42` | Random seed for validation inputs. |
+- Usage: `docker compose run --rm export`
+- Behavior: loads the trained model, exports it to ONNX (dynamic batch), then
+  builds a fixed-batch TensorRT engine and an OpenVINO IR from the ONNX graph.
+  TensorRT export requires a CUDA device.
+- Outputs: `experiments/best/export/onnx/model.onnx`,
+  `experiments/best/export/tensorrt/model.engine`,
+  `experiments/best/export/openvino/model.xml` + `model.bin`. When
+  `run_validation` is enabled each backend is compared against the PyTorch
+  reference (argmax match + max absolute logit difference).
 - Libraries: torch, torchvision, onnx, onnxruntime-gpu, tensorrt-cu13,
-  openvino, optimum.
+  openvino, optimum, ml-dtypes.
 
 ### inference-onnx (evaluation + inference)
-- Inputs: ONNX model in `checkpoints/`, data in `data/`, config in `configs/`.
+- Inputs: ONNX model in `experiments/`, data in `data/`, config in `configs/`.
 - Usage: `docker compose run --rm inference-onnx python src/inference/onnx.py`
 - Outputs: predictions / metrics to `checkpoints/` or stdout.
 - Libraries: torch, torchvision, onnx, onnxruntime-gpu, nvidia-cudnn-cu13.
 
 ### inference-tensorrt (evaluation + inference)
-- Inputs: TensorRT engine in `checkpoints/`, data in `data/`, config in `configs/`.
+- Inputs: TensorRT engine in `experiments/`, data in `data/`, config in `configs/`.
 - Usage: `docker compose run --rm inference-tensorrt python src/inference/tensorrt.py`
 - Outputs: predictions / metrics to `checkpoints/` or stdout.
 - Libraries: torch, torchvision, tensorrt-cu13, nvidia-cudnn-cu13.
 
 ### inference-openvino (evaluation + inference)
-- Inputs: OpenVINO IR in `checkpoints/`, data in `data/`, config in `configs/`.
+- Inputs: OpenVINO IR in `experiments/`, data in `data/`, config in `configs/`.
 - Usage: `docker compose run --rm inference-openvino python src/inference/openvino.py`
 - Outputs: predictions / metrics to `checkpoints/` or stdout.
 - Libraries: torch, torchvision, onnx, openvino (CPU execution).
@@ -75,7 +98,8 @@ All services are defined in `docker-compose.yml`.
 ## Roadmap
 
 - [x] Training of a base model image classifier (transformers, pytorch)
-- [ ] Evaluation of a base model (pytorch)
-- [ ] Conversion and evaluation in ONNX
-- [ ] Conversion and evaluation in TensorRT
-- [ ] Conversion and evaluation in OpenVINO
+- [x] Conversion in ONNX / TensorRT / OpenVINO (export service)
+- [ ] Evaluation of the base model (pytorch)
+- [ ] Evaluation in ONNX (onnxruntime-gpu)
+- [ ] Evaluation in TensorRT
+- [ ] Evaluation in OpenVINO

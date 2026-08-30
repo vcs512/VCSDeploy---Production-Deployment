@@ -38,6 +38,7 @@ services:
       - ./data:/app/data
       - ./configs:/app/configs
       - ./src:/app/src
+      - ./experiments:/app/experiments
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
@@ -51,6 +52,7 @@ services:
     working_dir: /app
     stdin_open: true
     tty: true
+    command: uv run -m src.services.export --config configs/export.json
 
   inference-onnx:
     build:
