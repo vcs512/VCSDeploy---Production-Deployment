@@ -4354,22 +4354,36 @@ inference-onnx = [
     { name = "ml-dtypes", version = "0.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "nvidia-cudnn-cu13", version = "9.20.0.48", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
     { name = "nvidia-cudnn-cu13", version = "9.24.0.43", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'emscripten' or sys_platform == 'win32'" },
+    { name = "nvidia-ml-py" },
     { name = "onnx" },
     { name = "onnxruntime-gpu" },
+    { name = "psutil" },
     { name = "torch" },
     { name = "torchvision" },
 ]
 inference-openvino = [
     { name = "ml-dtypes", version = "0.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "ml-dtypes", version = "0.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "nvidia-ml-py" },
     { name = "onnx" },
     { name = "openvino" },
+    { name = "psutil" },
     { name = "torch" },
     { name = "torchvision" },
+]
+inference-pytorch = [
+    { name = "datasets" },
+    { name = "nvidia-ml-py" },
+    { name = "psutil" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "transformers" },
 ]
 inference-tensorrt = [
     { name = "nvidia-cudnn-cu13", version = "9.20.0.48", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
     { name = "nvidia-cudnn-cu13", version = "9.24.0.43", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'emscripten' or sys_platform == 'win32'" },
+    { name = "nvidia-ml-py" },
+    { name = "psutil" },
     { name = "tensorrt-cu13" },
     { name = "torch" },
     { name = "torchvision" },
@@ -4412,20 +4426,34 @@ export = [
 inference-onnx = [
     { name = "ml-dtypes", specifier = ">=0.5.0" },
     { name = "nvidia-cudnn-cu13", specifier = ">=9.0.0" },
+    { name = "nvidia-ml-py", specifier = ">=13.610.43" },
     { name = "onnx", specifier = ">=1.17.0" },
     { name = "onnxruntime-gpu", specifier = ">=1.27.0" },
+    { name = "psutil", specifier = ">=7.0.0" },
     { name = "torch", specifier = ">=2.13.0", index = "https://download.pytorch.org/whl/cu132" },
     { name = "torchvision", specifier = ">=0.23.0", index = "https://download.pytorch.org/whl/cu132" },
 ]
 inference-openvino = [
     { name = "ml-dtypes", specifier = ">=0.5.0" },
+    { name = "nvidia-ml-py", specifier = ">=13.610.43" },
     { name = "onnx", specifier = ">=1.17.0" },
     { name = "openvino", specifier = ">=2025.0.0" },
+    { name = "psutil", specifier = ">=7.0.0" },
     { name = "torch", specifier = ">=2.13.0", index = "https://download.pytorch.org/whl/cu132" },
     { name = "torchvision", specifier = ">=0.23.0", index = "https://download.pytorch.org/whl/cu132" },
 ]
+inference-pytorch = [
+    { name = "datasets", specifier = ">=5.0.1" },
+    { name = "nvidia-ml-py", specifier = ">=13.610.43" },
+    { name = "psutil", specifier = ">=7.0.0" },
+    { name = "torch", specifier = ">=2.13.0", index = "https://download.pytorch.org/whl/cu132" },
+    { name = "torchvision", specifier = ">=0.23.0", index = "https://download.pytorch.org/whl/cu132" },
+    { name = "transformers", specifier = ">=5.0.0" },
+]
 inference-tensorrt = [
     { name = "nvidia-cudnn-cu13", specifier = ">=9.0.0" },
+    { name = "nvidia-ml-py", specifier = ">=13.610.43" },
+    { name = "psutil", specifier = ">=7.0.0" },
     { name = "tensorrt-cu13", specifier = ">=10.0.0" },
     { name = "torch", specifier = ">=2.13.0", index = "https://download.pytorch.org/whl/cu132" },
     { name = "torchvision", specifier = ">=0.23.0", index = "https://download.pytorch.org/whl/cu132" },

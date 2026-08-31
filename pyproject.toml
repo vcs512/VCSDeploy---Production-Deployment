@@ -37,6 +37,14 @@ export = [
     "optimum>=2.3.0",
     "ml-dtypes>=0.5.0",
 ]
+inference-pytorch = [
+    "torch>=2.13.0",
+    "torchvision>=0.23.0",
+    "transformers>=5.0.0",
+    "datasets>=5.0.1",
+    "psutil>=7.0.0",
+    "nvidia-ml-py>=13.610.43",
+]
 inference-onnx = [
     "torch>=2.13.0",
     "torchvision>=0.23.0",
@@ -44,12 +52,16 @@ inference-onnx = [
     "onnx>=1.17.0",
     "onnxruntime-gpu>=1.27.0",
     "ml-dtypes>=0.5.0",
+    "psutil>=7.0.0",
+    "nvidia-ml-py>=13.610.43",
 ]
 inference-tensorrt = [
     "torch>=2.13.0",
     "torchvision>=0.23.0",
     "nvidia-cudnn-cu13>=9.0.0",
     "tensorrt-cu13>=10.0.0",
+    "psutil>=7.0.0",
+    "nvidia-ml-py>=13.610.43",
 ]
 inference-openvino = [
     "torch>=2.13.0",
@@ -57,6 +69,8 @@ inference-openvino = [
     "onnx>=1.17.0",
     "openvino>=2025.0.0",
     "ml-dtypes>=0.5.0",
+    "psutil>=7.0.0",
+    "nvidia-ml-py>=13.610.43",
 ]
 
 [[tool.uv.index]]

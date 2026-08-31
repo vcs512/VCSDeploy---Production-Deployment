@@ -10,6 +10,7 @@ All services are defined in `docker-compose.yml`.
 | -------------------- | -------------------- | -------------- | --- |
 | `training`           | `training`           | PyTorch        | yes |
 | `export`             | `export`             | PyTorch+TRT+OV | yes |
+| `inference-pytorch`  | `inference-pytorch`  | PyTorch        | yes |
 | `inference-onnx`     | `inference-onnx`     | ONNX Runtime   | yes |
 | `inference-tensorrt` | `inference-tensorrt` | TensorRT       | yes |
 | `inference-openvino` | `inference-openvino` | OpenVINO       | no  |
@@ -47,8 +48,40 @@ All services are defined in `docker-compose.yml`.
   (`pytorch_model.bin`, `config.json`, `preprocessor_config.json`).
 - Libraries: torch, torchvision, transformers, accelerate, datasets, mlflow.
 
+### inference-pytorch (evaluation)
+- **Inputs:** trained Transformers model in `experiments/`, data in `data/`,
+  config in `configs/evaluation.json` (validated by `EvaluationConfig`).
+  Expected fields:
+
+  | Field | Type | Default | Description |
+  | --- | --- | --- | --- |
+  | `model_path` | str | `experiments/best` | Directory of the trained Transformers model. |
+  | `dataset_name` | str | `AI-Lab-Makerere/beans` | HuggingFace `datasets` dataset identifier. |
+  | `dataset_cache_dir` | str | `data` | Directory where the dataset is cached (persisted). |
+  | `label_column` | str | `labels` | Name of the dataset label column. |
+  | `split` | str | `test` | Dataset split used for evaluation. |
+  | `image_size` | int or null | `null` | Square input resolution; when `null` read from the model processor. |
+  | `batch_size` | int | `8` | Per-device batch size. |
+  | `num_workers` | int | `0` | DataLoader worker processes. |
+  | `device` | str | `auto` | Inference device: `auto`, `cuda` or `cpu`. |
+  | `sample_freq_hz` | float | `2.0` | Sampling frequency of the resource monitor. |
+  | `output_dir` | str | `experiments` | Directory where the CSV report is written. |
+  | `seed` | int | `42` | Random seed for reproducibility. |
+
+- Usage: `docker compose run --rm inference-pytorch`
+- Behavior: loads the trained model, evaluates it on the configured split, and
+  collects CPU, RAM, VRAM and GPU usage by sampling on a background thread.
+  Reports classification metrics (accuracy, precision, recall, f1) plus peak
+  and 50/90/95/99 percentiles for each resource and the elapsed time. The
+  summary is flattened into a single CSV row that includes a `backend` column
+  (set to `pytorch`).
+- Outputs: classification metrics, a resource summary and a timestamped CSV
+  report (`evaluation_<backend>_<timestamp>.csv` in `output_dir`) printed to
+  stdout.
+- Libraries: torch, torchvision, transformers, datasets, psutil, nvidia-ml-py.
+
 ### export
-- Inputs: trained model and export config in `configs/export.json`. Expected
+- **Inputs:** trained model and export config in `configs/export.json`. Expected
   fields:
 
   | Field | Type | Default | Description |
@@ -99,7 +132,7 @@ All services are defined in `docker-compose.yml`.
 
 - [x] Training of a base model image classifier (transformers, pytorch)
 - [x] Conversion in ONNX / TensorRT / OpenVINO (export service)
-- [ ] Evaluation of the base model (pytorch)
+- [x] Evaluation of the base model (pytorch)
 - [ ] Evaluation in ONNX (onnxruntime-gpu)
 - [ ] Evaluation in TensorRT
 - [ ] Evaluation in OpenVINO

@@ -47,6 +47,12 @@ COPY . .
 RUN uv sync --frozen --no-dev --group export
 CMD ["bash"]
 
+# ---- Inference / evaluation: PyTorch (native Transformers) ----
+FROM base AS inference-pytorch
+COPY . .
+RUN uv sync --frozen --no-dev --group inference-pytorch
+CMD ["bash"]
+
 # ---- Inference / evaluation: ONNX Runtime (CUDA) ----
 FROM base AS inference-onnx
 COPY . .

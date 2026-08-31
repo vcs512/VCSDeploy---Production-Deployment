@@ -54,6 +54,33 @@ services:
     tty: true
     command: uv run -m src.services.export --config configs/export.json
 
+  inference-pytorch:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: inference-pytorch
+    image: vcsdeploy-inference-pytorch
+    volumes:
+      - ./checkpoints:/app/checkpoints
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
+      - ./experiments:/app/experiments
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: uv run -m src.services.evaluation --config configs/evaluation.json
+
   inference-onnx:
     build:
       context: .
