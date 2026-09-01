@@ -27,6 +27,7 @@ def write_evaluation_csv(
     result: EvaluationResult,
     config: EvaluationConfig,
     backend: str,
+    device: str,
 ) -> Path:
     """Write the evaluation result summary to a CSV file.
 
@@ -34,12 +35,14 @@ def write_evaluation_csv(
         result: Evaluation result to persist.
         config: Resolved evaluation configuration.
         backend: Name of the inference runtime (e.g. 'pytorch').
+        device: Runtime device used for inference ('cpu' or 'cuda').
 
     Returns:
         Path to the written CSV report.
     """
     record = result.to_flat_record(
         backend=backend,
+        device=device,
         model_path=config.model_path,
         dataset_name=config.dataset_name,
         split=config.split,

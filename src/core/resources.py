@@ -29,6 +29,18 @@ def _percentiles(values: list[float]) -> dict:
     return stats
 
 
+def summarize_latencies(times: list[float]) -> dict:
+    """Summarise per-inference latencies with peak and percentiles.
+
+    Args:
+        times: Per-inference wall-clock durations in seconds.
+
+    Returns:
+        Dictionary with a ``peak`` field and one entry per percentile point.
+    """
+    return _percentiles(times)
+
+
 class _GpuContext:
     """Lazy wrapper around pynvml for GPU sampling (best-effort)."""
 
@@ -131,8 +143,11 @@ class ResourceMonitor:
             time_seconds=time.monotonic() - self._start_time,
         )
 
-    def summarize(self) -> ResourceStats:
+    def summarize(self, inference_seconds: dict | None = None) -> ResourceStats:
         """Summarise the collected samples with peak and percentiles.
+
+        Args:
+            inference_seconds: Percentile distribution of per-batch latency.
 
         Returns:
             Resource statistics computed from all collected samples.
@@ -149,5 +164,6 @@ class ResourceMonitor:
             ram_used_bytes=_percentiles(ram),
             vram_used_bytes=_percentiles(vram),
             gpu_util_percent=_percentiles(gpu),
+            inference_seconds=inference_seconds or {},
             elapsed_seconds=elapsed,
         )

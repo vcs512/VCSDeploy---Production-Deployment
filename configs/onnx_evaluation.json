@@ -1,0 +1,16 @@
+{
+  "onnx_path": "experiments/best/export/onnx/model.onnx",
+  "model_path": "experiments/best",
+  "dataset_name": "AI-Lab-Makerere/beans",
+  "dataset_cache_dir": "data",
+  "label_column": "labels",
+  "split": "test",
+  "image_size": null,
+  "batch_size": 8,
+  "num_workers": 0,
+  "device": "auto",
+  "provider": "cuda",
+  "sample_freq_hz": 2.0,
+  "output_dir": "experiments",
+  "seed": 42
+}

@@ -3,7 +3,8 @@
 import pandas as pd
 import pytest
 
-from src.core.resources import ResourceMonitor, _percentiles
+from src.core.loader import read_image_processor_stats
+from src.core.resources import ResourceMonitor, _percentiles, summarize_latencies
 from src.core.writer import write_evaluation_csv
 from src.schemas.evaluation import (
     EvaluationConfig,
@@ -33,6 +34,17 @@ def test_percentiles_peak_and_points():
 
 def test_percentiles_empty():
     assert _percentiles([]) == {"peak": 0.0}
+
+
+def test_summarize_latencies_percentiles():
+    stats = summarize_latencies([1.0, 2.0, 3.0, 4.0])
+    assert stats["peak"] == 4.0
+    assert stats["p50"] == 2.5
+    assert stats["p90"] == pytest.approx(3.7)
+
+
+def test_summarize_latencies_empty():
+    assert summarize_latencies([]) == {"peak": 0.0}
 
 
 def test_resource_monitor_summarize():
@@ -74,6 +86,7 @@ def _sample_result() -> EvaluationResult:
             ram_used_bytes={"peak": 100.0, "p50": 80.0},
             vram_used_bytes={"peak": 200.0, "p50": 150.0},
             gpu_util_percent={"peak": 60.0, "p50": 40.0},
+            inference_seconds={"peak": 1.0, "p50": 0.5},
             elapsed_seconds=5.0,
         ),
     )
@@ -83,16 +96,20 @@ def test_to_flat_record_includes_backend_and_stats():
     result = _sample_result()
     record = result.to_flat_record(
         backend="pytorch",
+        device="cuda",
         model_path="experiments/best",
         dataset_name="AI-Lab-Makerere/beans",
         split="test",
     )
     assert record["backend"] == "pytorch"
+    assert record["device"] == "cuda"
     assert record["model_path"] == "experiments/best"
     assert record["accuracy"] == 0.9
     assert record["cpu_peak"] == 90.0
     assert record["vram_peak"] == 200.0
     assert record["gpu_p50"] == 40.0
+    assert record["infer_peak"] == 1.0
+    assert record["infer_p50"] == 0.5
     assert record["elapsed_seconds"] == 5.0
 
 
@@ -103,6 +120,7 @@ def test_write_evaluation_csv(tmp_path):
         result=result,
         config=config,
         backend="pytorch",
+        device=config.resolved_device(),
     )
     assert report_path.exists()
     assert report_path.name.startswith("evaluation_pytorch_")
@@ -110,5 +128,14 @@ def test_write_evaluation_csv(tmp_path):
     frame = pd.read_csv(report_path)
     assert len(frame) == 1
     assert frame.loc[0, "backend"] == "pytorch"
+    assert frame.loc[0, "device"] == config.resolved_device()
     assert frame.loc[0, "accuracy"] == 0.9
     assert frame.loc[0, "vram_peak"] == 200.0
+    assert frame.loc[0, "infer_peak"] == 1.0
+
+
+def test_read_image_processor_stats_from_json():
+    stats = read_image_processor_stats("experiments/best")
+    assert stats["image_size"] == 256
+    assert stats["image_mean"] == pytest.approx((0.485, 0.456, 0.406))
+    assert stats["image_std"] == pytest.approx((0.229, 0.224, 0.225))

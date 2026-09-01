@@ -72,9 +72,8 @@ All services are defined in `docker-compose.yml`.
 - Behavior: loads the trained model, evaluates it on the configured split, and
   collects CPU, RAM, VRAM and GPU usage by sampling on a background thread.
   Reports classification metrics (accuracy, precision, recall, f1) plus peak
-  and 50/90/95/99 percentiles for each resource and the elapsed time. The
-  summary is flattened into a single CSV row that includes a `backend` column
-  (set to `pytorch`).
+  and 50/90/95/99 percentiles for each resource and for per-batch inference
+  latency (measured after the first, warmup batch) and the elapsed time.
 - Outputs: classification metrics, a resource summary and a timestamped CSV
   report (`evaluation_<backend>_<timestamp>.csv` in `output_dir`) printed to
   stdout.
@@ -110,11 +109,37 @@ All services are defined in `docker-compose.yml`.
 - Libraries: torch, torchvision, onnx, onnxruntime-gpu, tensorrt-cu13,
   openvino, optimum, ml-dtypes.
 
-### inference-onnx (evaluation + inference)
-- Inputs: ONNX model in `experiments/`, data in `data/`, config in `configs/`.
-- Usage: `docker compose run --rm inference-onnx python src/inference/onnx.py`
-- Outputs: predictions / metrics to `checkpoints/` or stdout.
-- Libraries: torch, torchvision, onnx, onnxruntime-gpu, nvidia-cudnn-cu13.
+### inference-onnx (evaluation)
+- **Inputs:** exported ONNX graph and its source model in `experiments/`, data
+  in `data/`, config in `configs/onnx_evaluation.json`.
+  Expected fields:
+
+  | Field | Type | Default | Description |
+  | --- | --- | --- | --- |
+  | `onnx_path` | str | `experiments/best/export/onnx/model.onnx` | Path to the exported ONNX graph. |
+  | `model_path` | str | `experiments/best` | Source Transformers model (used for the image processor). |
+  | `dataset_name` | str | `AI-Lab-Makerere/beans` | HuggingFace `datasets` dataset identifier. |
+  | `dataset_cache_dir` | str | `data` | Directory where the dataset is cached (persisted). |
+  | `label_column` | str | `labels` | Name of the dataset label column. |
+  | `split` | str | `test` | Dataset split used for evaluation. |
+  | `image_size` | int or null | `256` | Square input resolution fed to the ONNX graph. |
+  | `batch_size` | int | `8` | Per-device batch size. |
+  | `num_workers` | int | `0` | DataLoader worker processes. |
+  | `device` | str | `auto` | Device used for preprocessing. |
+  | `provider` | str | `cuda` | Preferred ONNX Runtime provider (`cuda` or `cpu`); falls back to CPU when unavailable. |
+  | `sample_freq_hz` | float | `2.0` | Sampling frequency of the resource monitor. |
+  | `output_dir` | str | `experiments` | Directory where the CSV report is written. |
+  | `seed` | int | `42` | Random seed for reproducibility. |
+
+- Usage: `docker compose run --rm inference-onnx`
+- Behavior: runs the exported ONNX graph through ONNX Runtime, evaluating it on
+  the configured split. It produces classification metrics (accuracy, precision,
+  recall, f1) and peak/50/90/95/99 percentiles for CPU, RAM, VRAM, GPU and
+  per-batch inference latency (excluding the warmup batch).
+- Outputs: classification metrics, a resource summary and a timestamped CSV
+  report (`evaluation_<backend>_<timestamp>.csv` in `output_dir`).
+- Libraries: torch, torchvision, datasets, onnx, onnxruntime-gpu, psutil,
+  nvidia-ml-py.
 
 ### inference-tensorrt (evaluation + inference)
 - Inputs: TensorRT engine in `experiments/`, data in `data/`, config in `configs/`.
@@ -133,6 +158,6 @@ All services are defined in `docker-compose.yml`.
 - [x] Training of a base model image classifier (transformers, pytorch)
 - [x] Conversion in ONNX / TensorRT / OpenVINO (export service)
 - [x] Evaluation of the base model (pytorch)
-- [ ] Evaluation in ONNX (onnxruntime-gpu)
+- [x] Evaluation in ONNX (onnxruntime-gpu)
 - [ ] Evaluation in TensorRT
 - [ ] Evaluation in OpenVINO

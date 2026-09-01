@@ -59,6 +59,7 @@ class ResourceStats(BaseModel):
         ram_used_bytes: Percentile distribution and peak of process RAM.
         vram_used_bytes: Percentile distribution and peak of GPU memory.
         gpu_util_percent: Percentile distribution and peak of GPU utilization.
+        inference_seconds: Percentile distribution of per-batch inference latency.
         elapsed_seconds: Total elapsed evaluation time.
     """
 
@@ -66,6 +67,7 @@ class ResourceStats(BaseModel):
     ram_used_bytes: dict = Field(default_factory=dict)
     vram_used_bytes: dict = Field(default_factory=dict)
     gpu_util_percent: dict = Field(default_factory=dict)
+    inference_seconds: dict = Field(default_factory=dict)
     elapsed_seconds: float = Field(default=0.0)
 
 
@@ -87,6 +89,7 @@ class EvaluationResult(BaseModel):
     def to_flat_record(
         self,
         backend: str,
+        device: str,
         model_path: str,
         dataset_name: str,
         split: str,
@@ -95,6 +98,7 @@ class EvaluationResult(BaseModel):
 
         Args:
             backend: Name of the inference runtime (e.g. 'pytorch').
+            device: Runtime device used for inference ('cpu' or 'cuda').
             model_path: Path of the evaluated model.
             dataset_name: Identifier of the evaluated dataset.
             split: Dataset split that was evaluated.
@@ -104,6 +108,7 @@ class EvaluationResult(BaseModel):
         """
         record = {
             "backend": backend,
+            "device": device,
             "model_path": model_path,
             "dataset_name": dataset_name,
             "split": split,
@@ -119,6 +124,7 @@ class EvaluationResult(BaseModel):
             ("ram", self.resources.ram_used_bytes),
             ("vram", self.resources.vram_used_bytes),
             ("gpu", self.resources.gpu_util_percent),
+            ("infer", self.resources.inference_seconds),
         ):
             for name, value in stats.items():
                 record[f"{prefix}_{name}"] = value

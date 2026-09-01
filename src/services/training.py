@@ -2,9 +2,9 @@
 
 import argparse
 
-from src.core.dataset import load_classification_dataset
 from src.core.model import build_model
 from src.core.trainer import run_training
+from src.core.training_dataset import load_classification_dataset
 from src.schemas.training import TrainingConfig
 
 
