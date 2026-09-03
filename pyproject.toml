@@ -68,11 +68,12 @@ inference-tensorrt = [
 inference-openvino = [
     "torch>=2.13.0",
     "torchvision>=0.23.0",
+    "datasets>=5.0.1",
+    "tqdm>=4.0",
     "onnx>=1.17.0",
     "openvino>=2025.0.0",
     "ml-dtypes>=0.5.0",
     "psutil>=7.0.0",
-    "nvidia-ml-py>=13.610.43",
 ]
 
 [[tool.uv.index]]

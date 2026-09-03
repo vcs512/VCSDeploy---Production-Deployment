@@ -144,6 +144,10 @@ services:
       - ./data:/app/data
       - ./configs:/app/configs
       - ./src:/app/src
+      - ./experiments:/app/experiments
+    devices:
+      - /dev/dri:/dev/dri
     working_dir: /app
     stdin_open: true
     tty: true
+    command: uv run -m src.services.openvino_evaluation --config configs/openvino_evaluation.json

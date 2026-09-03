@@ -13,7 +13,7 @@ All services are defined in `docker-compose.yml`.
 | `inference-pytorch`  | `inference-pytorch`  | PyTorch        | yes |
 | `inference-onnx`     | `inference-onnx`     | ONNX Runtime   | yes |
 | `inference-tensorrt` | `inference-tensorrt` | TensorRT       | yes |
-| `inference-openvino` | `inference-openvino` | OpenVINO       | no  |
+| `inference-openvino` | `inference-openvino` | OpenVINO       | optional |
 
 ### training
 - **Inputs:** the routine is configured entirely through `configs/training.json`
@@ -147,11 +147,40 @@ All services are defined in `docker-compose.yml`.
 - Outputs: predictions / metrics to `checkpoints/` or stdout.
 - Libraries: torch, torchvision, tensorrt-cu13, nvidia-cudnn-cu13.
 
-### inference-openvino (evaluation + inference)
-- Inputs: OpenVINO IR in `experiments/`, data in `data/`, config in `configs/`.
-- Usage: `docker compose run --rm inference-openvino python src/inference/openvino.py`
-- Outputs: predictions / metrics to `checkpoints/` or stdout.
-- Libraries: torch, torchvision, onnx, openvino (CPU execution).
+### inference-openvino (evaluation)
+- **Inputs:** exported OpenVINO IR and its source model in `experiments/`, data
+  in `data/`, config in `configs/openvino_evaluation.json`.
+  Expected fields:
+
+  | Field | Type | Default | Description |
+  | --- | --- | --- | --- |
+  | `openvino_path` | str | `experiments/best/export/openvino/model.xml` | Path to the exported OpenVINO IR. |
+  | `model_path` | str | `experiments/best` | Source Transformers model (used for the image processor). |
+  | `dataset_name` | str | `AI-Lab-Makerere/beans` | HuggingFace `datasets` dataset identifier. |
+  | `dataset_cache_dir` | str | `data` | Directory where the dataset is cached (persisted). |
+  | `label_column` | str | `labels` | Name of the dataset label column. |
+  | `split` | str | `test` | Dataset split used for evaluation. |
+  | `image_size` | int or null | `256` | Square input resolution fed to the IR. |
+  | `batch_size` | int | `8` | Per-device batch size. |
+  | `num_workers` | int | `0` | DataLoader worker processes. |
+  | `device` | str | `auto` | Device used for preprocessing. |
+  | `ov_device` | str | `cpu` | Preferred OpenVINO device (`gpu` or `cpu`); falls back to CPU when unavailable. |
+  | `sample_freq_hz` | float | `2.0` | Sampling frequency of the resource monitor. |
+  | `output_dir` | str | `experiments` | Directory where the CSV report is written. |
+  | `seed` | int | `42` | Random seed for reproducibility. |
+
+- Usage: `docker compose run --rm inference-openvino`
+- Behavior: runs the exported OpenVINO IR through the OpenVINO runtime,
+  evaluating it on the configured split. It produces classification metrics
+  (accuracy, precision, recall, f1) and peak/50/90/95/99 percentiles for CPU,
+  RAM, VRAM, GPU and per-batch inference latency (excluding the warmup batch).
+- Outputs: classification metrics, a resource summary and a timestamped CSV
+  report (`evaluation_openvino_<timestamp>.csv` in `output_dir`).
+- Libraries: torch, torchvision, datasets, onnx, openvino, psutil.
+- GPU note: the compose service shares `/dev/dri:/dev/dri` so it is ready for
+  newer Intel CPUs (Gen 9+ or Arc) with an Intel iGPU/dGPU. To use the Intel
+  GPU set `ov_device: "gpu"` in the config; the service detects GPU
+  availability and falls back to CPU otherwise.
 
 ## Roadmap
 
@@ -160,4 +189,4 @@ All services are defined in `docker-compose.yml`.
 - [x] Evaluation of the base model (pytorch)
 - [x] Evaluation in ONNX (onnxruntime-gpu)
 - [ ] Evaluation in TensorRT
-- [ ] Evaluation in OpenVINO
+- [x] Evaluation in OpenVINO

@@ -1,5 +1,7 @@
 """System resource monitoring for the evaluation service."""
 
+import glob
+import os
 import threading
 import time
 
@@ -42,27 +44,53 @@ def summarize_latencies(times: list[float]) -> dict:
 
 
 class _GpuContext:
-    """Lazy wrapper around pynvml for GPU sampling (best-effort)."""
+    """Lazy GPU sampler using NVML, falling back to the DRM interface."""
 
     def __init__(self) -> None:
         self._handle = None
+        self._nvml_errors = (OSError, RuntimeError, ImportError)
+        self._drm_card = None
         self._enabled = False
         self._init()
 
     def _init(self) -> None:
-        """Initialize the NVML handle when a CUDA device is present."""
+        """Initialize the NVML handle or the DRM card when available."""
         try:
             import pynvml
 
+            if hasattr(pynvml, "NVMLError_LibraryNotFound"):
+                self._nvml_errors = (
+                    pynvml.NVMLError_LibraryNotFound,
+                    OSError,
+                    RuntimeError,
+                    ImportError,
+                )
             pynvml.nvmlInit()
             if pynvml.nvmlDeviceGetCount() == 0:
                 pynvml.nvmlShutdown()
+                self._init_drm()
                 return
             self._handle = pynvml.nvmlDeviceGetHandleByIndex(0)
             self._enabled = True
-        except (ImportError, OSError, RuntimeError):
+        except Exception as err:
+            if not isinstance(err, self._nvml_errors):
+                raise
             self._handle = None
-            self._enabled = False
+            self._init_drm()
+
+    def _init_drm(self) -> None:
+        """Locate the first DRM card exposing a readable hwmon metric."""
+        for card in glob.glob("/sys/class/drm/card*"):
+            hwmon = os.path.join(card, "device", "hwmon")
+            candidates = glob.glob(os.path.join(hwmon, "hwmon*"))
+            if any(
+                os.access(os.path.join(metric_dir, name), os.R_OK)
+                for metric_dir in candidates
+                for name in ("utilization", "mem_used_mb")
+            ):
+                self._drm_card = card
+                self._enabled = True
+                return
 
     def read(self) -> tuple[float, float]:
         """Read current GPU utilization and used memory.
@@ -70,16 +98,48 @@ class _GpuContext:
         Returns:
             A tuple with the utilization (percent) and used memory (bytes).
         """
-        if not self._enabled or self._handle is None:
+        if not self._enabled:
             return 0.0, 0.0
-        try:
-            import pynvml
+        if self._handle is not None:
+            try:
+                import pynvml
 
-            util = pynvml.nvmlDeviceGetUtilizationRates(self._handle)
-            memory = pynvml.nvmlDeviceGetMemoryInfo(self._handle)
-            return float(util.gpu), float(memory.used)
-        except (OSError, RuntimeError):
-            return 0.0, 0.0
+                util = pynvml.nvmlDeviceGetUtilizationRates(self._handle)
+                memory = pynvml.nvmlDeviceGetMemoryInfo(self._handle)
+                return float(util.gpu), float(memory.used)
+            except Exception as err:
+                if not isinstance(err, self._nvml_errors):
+                    raise
+                return 0.0, 0.0
+        if self._drm_card is not None:
+            try:
+                return _read_drm_metrics(self._drm_card)
+            except (OSError, ValueError):
+                return 0.0, 0.0
+        return 0.0, 0.0
+
+
+def _read_drm_metrics(card: str) -> tuple[float, float]:
+    """Read utilization and used memory from a DRM card.
+
+    Args:
+        card: Absolute path to a /sys/class/drm/card* entry.
+
+    Returns:
+        A tuple with the utilization (percent) and used memory (bytes).
+    """
+    util = 0.0
+    memory = 0.0
+    for metric_dir in glob.glob(os.path.join(card, "device", "hwmon", "hwmon*")):
+        utilization = os.path.join(metric_dir, "utilization")
+        if os.access(utilization, os.R_OK):
+            with open(utilization, encoding="utf-8") as handle:
+                util = float(handle.read().strip())
+        mem_used = os.path.join(metric_dir, "mem_used_mb")
+        if os.access(mem_used, os.R_OK):
+            with open(mem_used, encoding="utf-8") as handle:
+                memory = float(handle.read().strip()) * 1024 * 1024
+    return util, memory
 
 
 class ResourceMonitor:
