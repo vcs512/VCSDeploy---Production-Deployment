@@ -141,11 +141,39 @@ All services are defined in `docker-compose.yml`.
 - Libraries: torch, torchvision, datasets, onnx, onnxruntime-gpu, psutil,
   nvidia-ml-py.
 
-### inference-tensorrt (evaluation + inference)
-- Inputs: TensorRT engine in `experiments/`, data in `data/`, config in `configs/`.
-- Usage: `docker compose run --rm inference-tensorrt python src/inference/tensorrt.py`
-- Outputs: predictions / metrics to `checkpoints/` or stdout.
-- Libraries: torch, torchvision, tensorrt-cu13, nvidia-cudnn-cu13.
+### inference-tensorrt (evaluation)
+- **Inputs:** serialized TensorRT engine and its source model in `experiments/`,
+  data in `data/`, config in `configs/tensorrt_evaluation.json`.
+  Expected fields:
+
+  | Field | Type | Default | Description |
+  | --- | --- | --- | --- |
+  | `tensorrt_path` | str | `experiments/best/export/tensorrt/model.engine` | Path to the serialized TensorRT engine. |
+  | `engine_batch_size` | int | `8` | Fixed batch dimension compiled into the engine. |
+  | `model_path` | str | `experiments/best` | Source Transformers model (used for the image processor). |
+  | `dataset_name` | str | `AI-Lab-Makerere/beans` | HuggingFace `datasets` dataset identifier. |
+  | `dataset_cache_dir` | str | `data` | Directory where the dataset is cached (persisted). |
+  | `label_column` | str | `labels` | Name of the dataset label column. |
+  | `split` | str | `test` | Dataset split used for evaluation. |
+  | `image_size` | int or null | `256` | Square input resolution fed to the engine. |
+  | `batch_size` | int | `8` | Per-device batch size (must match the engine). |
+  | `num_workers` | int | `0` | DataLoader worker processes. |
+  | `device` | str | `auto` | Device used for preprocessing. |
+  | `sample_freq_hz` | float | `2.0` | Sampling frequency of the resource monitor. |
+  | `output_dir` | str | `experiments` | Directory where the CSV report is written. |
+  | `seed` | int | `42` | Random seed for reproducibility. |
+
+- Usage: `docker compose run --rm inference-tensorrt`
+- Behavior: deserializes the fixed-batch TensorRT engine and evaluates it on the
+  configured split on CUDA. Because the engine is fixed-batch, a trailing
+  partial batch is padded with the last image, run, and the padded predictions
+  are discarded. Produces classification metrics (accuracy, precision, recall,
+  f1) and peak/50/90/95/99 percentiles for CPU, RAM, VRAM, GPU and per-batch
+  inference latency (excluding the warmup batch).
+- Outputs: classification metrics, a resource summary and a timestamped CSV
+  report (`evaluation_tensorrt_<timestamp>.csv` in `output_dir`).
+- Libraries: torch, torchvision, tensorrt-cu13, nvidia-cudnn-cu13, datasets,
+  psutil, nvidia-ml-py.
 
 ### inference-openvino (evaluation)
 - **Inputs:** exported OpenVINO IR and its source model in `experiments/`, data
@@ -188,5 +216,5 @@ All services are defined in `docker-compose.yml`.
 - [x] Conversion in ONNX / TensorRT / OpenVINO (export service)
 - [x] Evaluation of the base model (pytorch)
 - [x] Evaluation in ONNX (onnxruntime-gpu)
-- [ ] Evaluation in TensorRT
+- [x] Evaluation in TensorRT
 - [x] Evaluation in OpenVINO
